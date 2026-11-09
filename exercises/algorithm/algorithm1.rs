@@ -2,7 +2,6 @@
 	single linked list merge
 	This problem requires you to merge two ordered singly linked lists into one ordered singly linked list
 */
-// I AM NOT DONE
 
 use std::fmt::{self, Display, Formatter};
 use std::ptr::NonNull;
@@ -69,14 +68,53 @@ impl<T> LinkedList<T> {
             },
         }
     }
-	pub fn merge(list_a:LinkedList<T>,list_b:LinkedList<T>) -> Self
+	pub fn merge(list_a: LinkedList<T>, list_b: LinkedList<T>) -> Self
+	where
+		T: PartialOrd,
 	{
-		//TODO
-		Self {
-            length: 0,
-            start: None,
-            end: None,
-        }
+		let mut result = Self::new();
+		let mut a = list_a.start;
+		let mut b = list_b.start;
+
+		while let (Some(a_ptr), Some(b_ptr)) = (a, b) {
+			unsafe {
+				let take_a = (*a_ptr.as_ptr()).val <= (*b_ptr.as_ptr()).val;
+				let chosen = if take_a {
+					let next = (*a_ptr.as_ptr()).next;
+					(*a_ptr.as_ptr()).next = None;
+					a = next;
+					a_ptr
+				} else {
+					let next = (*b_ptr.as_ptr()).next;
+					(*b_ptr.as_ptr()).next = None;
+					b = next;
+					b_ptr
+				};
+				match result.end {
+					None => result.start = Some(chosen),
+					Some(end_ptr) => (*end_ptr.as_ptr()).next = Some(chosen),
+				}
+				result.end = Some(chosen);
+				result.length += 1;
+			}
+		}
+
+		let mut rest = a.or(b);
+		while let Some(ptr) = rest {
+			unsafe {
+				let next = (*ptr.as_ptr()).next;
+				(*ptr.as_ptr()).next = None;
+				match result.end {
+					None => result.start = Some(ptr),
+					Some(end_ptr) => (*end_ptr.as_ptr()).next = Some(ptr),
+				}
+				result.end = Some(ptr);
+				result.length += 1;
+				rest = next;
+			}
+		}
+
+		result
 	}
 }
 
